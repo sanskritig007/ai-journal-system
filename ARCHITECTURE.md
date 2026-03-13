@@ -109,3 +109,49 @@ I would add:
 - request IDs
 - metrics for API latency, queue depth, LLM failures, cache hit rate
 - alerting for elevated error rate and provider outages
+
+
+## How I Would Reduce LLM Cost
+
+The LLM is the most expensive part of the system because it is called on every new journal save.
+
+I would reduce cost using four practical strategies.
+
+### 1. Use the Smallest Useful Model
+
+The app only needs:
+
+- one-word emotion
+- a few keywords
+- one-sentence summary
+
+This is a lightweight classification/summarization task. I would keep it on a fast, cheaper model instead of a heavy reasoning model.
+
+### 2. Make the Prompt Smaller and More Deterministic
+
+Current prompt size is already reasonable, but I would keep it tight:
+
+- no extra prose
+- strict output schema
+- low temperature
+- short completion budget
+
+That reduces token usage and parsing variability.
+
+### 3. Analyze Only When Necessary
+
+Not every action should trigger the LLM.
+
+I would avoid re-analysis for:
+
+- unchanged journal text
+- repeated submissions
+- duplicate retry requests
+
+### 4. Add Usage Controls
+
+If this became a real product, I would introduce:
+
+- daily free-tier limits
+- background analysis batching where appropriate
+- feature gating for premium analysis volume
