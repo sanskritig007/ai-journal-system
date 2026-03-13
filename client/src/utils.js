@@ -1,4 +1,3 @@
-// Emotion → [background, foreground] colour map
 export const EMOTION_COLORS = {
     calm: ['rgba(74,222,128,0.15)', '#4ade80'],
     peaceful: ['rgba(74,222,128,0.15)', '#4ade80'],
@@ -19,7 +18,9 @@ export const AMBIENCE_COLOR = {
 };
 
 export const AMBIENCE_EMOJI = {
-    forest: '🌲', ocean: '🌊', mountain: '🏔️',
+    forest: '🌲',
+    ocean: '🌊',
+    mountain: '🏔️',
 };
 
 export function capitalize(s) {
