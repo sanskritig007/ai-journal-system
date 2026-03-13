@@ -291,3 +291,15 @@ These are good choices for an assignment build, but I would not present them as 
 - the next production steps are clearly identified
 - scale, cost, caching, and privacy have concrete solutions
 
+
+## Summary
+
+This project starts as a clean local full-stack AI journal app, but it is designed in a way that can evolve:
+
+- SQLite -> PostgreSQL
+- inline LLM calls -> queued background workers
+- no cache -> content-hash analysis cache
+- local demo identity -> real auth and authorization
+- single-process deployment -> horizontally scaled API + shared infra
+
+That progression is realistic, incremental, and aligned with how this codebase already works today.
