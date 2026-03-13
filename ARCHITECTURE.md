@@ -155,3 +155,139 @@ If this became a real product, I would introduce:
 - daily free-tier limits
 - background analysis batching where appropriate
 - feature gating for premium analysis volume
+
+
+## How I Would Cache Repeated Analysis
+
+Repeated journal text is a direct opportunity to save cost and latency.
+
+### Current Opportunity
+
+If the same or nearly same text is submitted multiple times, the backend currently calls Gemini every time.
+
+### Proposed Cache Strategy
+
+I would normalize the text first:
+
+- trim whitespace
+- lowercase
+- collapse repeated spaces
+
+Then generate a content hash, for example:
+
+- `sha256(normalized_text)`
+
+That hash becomes the cache key.
+
+### Cache Design
+
+For each unique normalized text:
+
+- key: content hash
+- value:
+  - emotion
+  - keywords
+  - summary
+  - model version
+  - prompt version
+  - created timestamp
+
+Storage options:
+
+- Redis for hot cache
+- PostgreSQL table for durable cache
+
+
+### Why Model Version Matters
+
+The cache should be invalidated when:
+
+- prompt changes
+- output contract changes
+- model changes
+
+So the real cache key should include:
+
+- text hash
+- model name
+- prompt version
+
+Example:
+
+- `sha256(normalized_text) + gemini-2.5-flash + prompt_v2`
+
+This prevents stale or mismatched analysis results.
+
+## How I Would Protect Sensitive Journal Data
+
+This application handles mental-state journaling, so privacy should be treated as a first-class concern.
+
+### 1. Add Real Authentication
+
+The current demo uses a client-stored `userId`. That is acceptable for local testing, but not secure for a real product.
+
+I would move to:
+
+- authenticated user accounts
+- signed sessions or JWTs
+- server-side authorization checks on every journal query
+
+That prevents one user from reading another user's entries by guessing an ID.
+
+### 2. Encrypt Data in Transit and at Rest
+
+I would use:
+
+- HTTPS everywhere
+- encrypted database storage
+- encrypted backups
+
+For especially sensitive deployments, I would also consider field-level encryption for raw journal text.
+
+### 3. Minimize What Leaves the System
+
+Journal text is sent to the LLM provider today. In production, I would reduce exposure by:
+
+- sending only necessary text
+- documenting third-party data flow clearly
+- allowing users to opt out of AI analysis
+
+If privacy requirements were stricter, I would evaluate a self-hosted model path for sensitive deployments.
+
+### 4. Add Access Controls and Auditing
+
+I would implement:
+
+- role-based admin access
+- audit logs for sensitive operations
+- secret rotation for API keys
+- strict environment-variable management
+
+### 5. Add Data Lifecycle Controls
+
+Users should control their data.
+
+I would support:
+
+- delete entry
+- delete account
+- export journal history
+- retention policies
+
+This improves privacy posture and product trust.
+
+## Tradeoffs in the Current Version
+
+The current system intentionally optimizes for simplicity and assignment clarity:
+
+- SQLite keeps setup fast and local
+- synchronous analysis keeps the flow easy to understand
+- local `userId` avoids auth complexity during demo
+- React frontend + Express API keep the stack straightforward
+
+These are good choices for an assignment build, but I would not present them as final production architecture. The stronger engineering story is:
+
+- the current version is intentionally simple
+- the next production steps are clearly identified
+- scale, cost, caching, and privacy have concrete solutions
+
