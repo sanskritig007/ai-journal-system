@@ -10,8 +10,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve the frontend from the public/ folder
-app.use(express.static(path.join(__dirname, "public")));
+// Serve the React frontend in production
+app.use(express.static(path.join(__dirname, "client/dist")));
 
 app.use("/api/journal", journalRoutes);
 
