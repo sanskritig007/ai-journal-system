@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ArvyaX — Nature Journal</title>
+    <meta name="description"
+        content="ArvyaX immersive nature journal — write, analyze emotions, and track your mental state over time." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;1,400&display=swap"
+        rel="stylesheet" />
+
+    
+
+<body>
+
+    <!-- Floating particles (decorative) -->
+    <div class="particle" style="left:10%;animation-duration:12s;animation-delay:0s;width:3px;height:3px"></div>
+    <div class="particle" style="left:25%;animation-duration:18s;animation-delay:3s"></div>
+    <div class="particle" style="left:50%;animation-duration:14s;animation-delay:6s;width:3px;height:3px"></div>
+    <div class="particle" style="left:70%;animation-duration:20s;animation-delay:1s"></div>
+    <div class="particle" style="left:85%;animation-duration:16s;animation-delay:9s;width:4px;height:4px"></div>
+
+    <div class="wrap">
+
+        <!-- ===== HEADER ===== -->
+        <header>
+            <div class="logo-badge"><span>🌿</span> ArvyaX</div>
+            <h1>Your <em>Nature</em> Journal</h1>
+            <p>Write after your immersive session. The AI understands how you feel.</p>
+        </header>
+
+        <!-- ===== USER ID BAR ===== -->
+        <div class="user-bar">
+            <div class="dot"></div>
+            <span>User ID:</span>
+            <input type="text" id="userIdInput" placeholder="Enter your ID (e.g. user123)" maxlength="40" />
+        </div>
+
+        <!-- ===== AMBIENCE SELECTOR ===== -->
+        <p class="section-label">1 — Choose your session ambience</p>
+        <div class="ambience-grid" id="ambienceGrid">
+            <div class="amb-card forest" data-value="forest" onclick="selectAmbience(this)">
+                <span class="amb-emoji">🌲</span>
+                <div class="amb-name">Forest</div>
+                <div class="amb-desc">Deep & grounding</div>
+            </div>
+            <div class="amb-card ocean" data-value="ocean" onclick="selectAmbience(this)">
+                <span class="amb-emoji">🌊</span>
+                <div class="amb-name">Ocean</div>
+                <div class="amb-desc">Vast & freeing</div>
+            </div>
+            <div class="amb-card mountain" data-value="mountain" onclick="selectAmbience(this)">
+                <span class="amb-emoji">🏔️</span>
+                <div class="amb-name">Mountain</div>
+                <div class="amb-desc">Clear & still</div>
+            </div>
+        </div>
+
+        <!-- ===== JOURNAL TEXTAREA ===== -->
+        <p class="section-label">2 — Write your journal entry</p>
+        <div class="journal-card">
+            <textarea id="journalText"
+                placeholder="How did the session make you feel? What did you notice, hear, or sense?&#10;&#10;Let your thoughts flow naturally..."
+                oninput="updateCharCount(this)">
+      </textarea>
+            <div class="card-footer">
+                <span class="char-count" id="charCount">0 / 1000</span>
+            </div>
+        </div>
+
+        <button class="btn-analyze" id="analyzeBtn" onclick="saveAndAnalyze()">
+            <div class="spinner"></div>
+            <span class="btn-icon">🔍</span>
+            <span id="btnText">Save &amp; Analyze Emotion</span>
+        </button>
+
+        <!-- ===== EMOTION RESULT ===== -->
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <div class="emotion-badge" id="emotionBadge">—</div>
+                <span style="font-size:12px;color:var(--text-muted)">Latest analysis</span>
+            </div>
+            <p class="result-summary" id="resultSummary"></p>
+            <div class="keywords-row" id="resultKeywords"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ===== INSIGHTS ===== -->
+        <p class="section-label" style="margin-bottom:16px">Mental state insights</p>
+        <div class="insights-grid" id="insightsGrid">
+            <div class="insight-tile">
+                <span class="insight-value" id="ins-total">—</span>
+                <span class="insight-label">Total Entries</span>
+            </div>
+            <div class="insight-tile">
+                <span class="insight-value" id="ins-emotion">—</span>
+                <span class="insight-label">Top Emotion</span>
+            </div>
+            <div class="insight-tile">
+                <span class="insight-value" id="ins-ambience" style="font-size:20px">—</span>
+                <span class="insight-label">Fav Ambience</span>
+            </div>
+        </div>
+        <div class="keywords-cloud" id="ins-keywords" style="margin-bottom:32px"></div>
+
+        <div class="divider"></div>
+
+        <!-- ===== ENTRIES FEED ===== -->
+        <p class="section-label" style="margin-bottom:16px">Past entries</p>
+        <div class="entries-list" id="entriesList">
+            <div class="empty-state">
+                <span class="icon">🍃</span>
+                Enter your user ID above and write your first entry.
+            </div>
+        </div>
+
+    </div><!-- /wrap -->
+
+    <!-- Toast notification -->
+    <div id="toast"></div>
+
+    <!-- ===================== JAVASCRIPT ===================== -->
+    <script>
+        /* ── State ─────────────────────────────────────── */
+        let selectedAmbience = '';
+
+        /* Emotion colour map */
+        const EMOTION_COLORS = {
+            calm: ['rgba(74,222,128,0.15)', '#4ade80'],
+            peaceful: ['rgba(74,222,128,0.15)', '#4ade80'],
+            joyful: ['rgba(251,191,36,0.15)', '#fbbf24'],
+            happy: ['rgba(251,191,36,0.15)', '#fbbf24'],
+            excited: ['rgba(251,191,36,0.18)', '#fcd34d'],
+            anxious: ['rgba(239,68,68,0.15)', '#f87171'],
+            sad: ['rgba(96,165,250,0.15)', '#60a5fa'],
+            melancholy: ['rgba(96,165,250,0.15)', '#93c5fd'],
+            grateful: ['rgba(167,139,250,0.15)', '#a78bfa'],
+            reflective: ['rgba(167,139,250,0.12)', '#c4b5fd'],
+        };
+
+        const AMBIENCE_COLOR = {
+            forest: '#4ade80',
+            ocean: '#60a5fa',
+            mountain: '#a78bfa',
+        };
+
+        /* ── Boot ──────────────────────────────────────── */
+        window.addEventListener('DOMContentLoaded', () => {
+            // Auto-generate a userId on first visit if one doesn't exist
+            let savedId = localStorage.getItem('arvyax_userId');
+            if (!savedId) {
+                savedId = 'user_' + Math.random().toString(36).slice(2, 9);
+                localStorage.setItem('arvyax_userId', savedId);
+            }
+            document.getElementById('userIdInput').value = savedId;
+            loadEntries(savedId);
+            loadInsights(savedId);
+
+            // Allow user to manually change their ID
+            document.getElementById('userIdInput').addEventListener('change', (e) => {
+                const id = e.target.value.trim();
+                if (id) {
+                    localStorage.setItem('arvyax_userId', id);
+                    loadEntries(id);
+                    loadInsights(id);
+                }
+            });
+        });
+
+        /* ── Ambience selector ─────────────────────────── */
+        function selectAmbience(card) {
+            document.querySelectorAll('.amb-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedAmbience = card.dataset.value;
+        }
+
+        /* ── Character counter ─────────────────────────── */
+        function updateCharCount(el) {
+            document.getElementById('charCount').textContent = `${el.value.length} / 1000`;
+        }
+
+        /* ── Save + Analyze ────────────────────────────── */
+        async function saveAndAnalyze() {
+            const userId = document.getElementById('userIdInput').value.trim();
+            const text = document.getElementById('journalText').value.trim();
+            const btn = document.getElementById('analyzeBtn');
+
+            // userId is always auto-set, but guard just in case
+            if (!userId) return toast('Session error — please refresh the page.', true);
+            if (!selectedAmbience) return toast('Please choose an ambience.', true);
+            if (!text) return toast('Please write your journal entry.', true);
+
+            // Loading state
+            btn.disabled = true;
+            btn.classList.add('loading');
+            document.getElementById('btnText').textContent = 'Analyzing…';
+
+            try {
+                const res = await fetch('/api/journal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, ambience: selectedAmbience, text }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+                // Only show result card if LLM analysis succeeded
+                if (data.emotion) {
+                    showResult(data);
+                    toast('Journal saved & analyzed ✓');
+                } else {
+                    // LLM was unavailable — entry still saved
+                    document.getElementById('resultCard').classList.remove('visible');
+                    toast('Entry saved! (AI analysis temporarily unavailable — it will retry next time)', false);
+                }
+
+                // Clear textarea
+                document.getElementById('journalText').value = '';
+                document.getElementById('charCount').textContent = '0 / 1000';
+
+                // Reload feed + insights
+                await Promise.all([loadEntries(userId), loadInsights(userId)]);
+
+            } catch (err) {
+                toast(err.message || 'Failed to save entry.', true);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                document.getElementById('btnText').textContent = 'Save & Analyze Emotion';
+            }
+        }
+
+        /* ── Render emotion result ─────────────────────── */
+        function showResult(data) {
+            const card = document.getElementById('resultCard');
+            const badge = document.getElementById('emotionBadge');
+            const summary = document.getElementById('resultSummary');
+            const kwRow = document.getElementById('resultKeywords');
+
+            const emotion = (data.emotion || 'unknown').toLowerCase();
+            const [bg, fg] = EMOTION_COLORS[emotion] || ['rgba(100,100,100,0.15)', '#aaa'];
+
+            badge.style.background = bg;
+            badge.style.color = fg;
+            badge.style.border = `1px solid ${fg}44`;
+            badge.textContent = `✦ ${emotion}`;
+
+            summary.textContent = data.summary || '';
+
+            kwRow.innerHTML = (data.keywords || []).map(k =>
+                `<span class="keyword-chip">${k}</span>`
+            ).join('');
+
+            card.classList.remove('visible');
+            // Force reflow for animation
+            void card.offsetWidth;
+            card.classList.add('visible');
+        }
+
+        /* ── Load entries ──────────────────────────────── */
+        async function loadEntries(userId) {
+            const list = document.getElementById('entriesList');
+            try {
+                const res = await fetch(`/api/journal/${encodeURIComponent(userId)}`);
+                const data = await res.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    list.innerHTML = `<div class="empty-state">
+            <span class="icon">🍃</span>No entries yet. Write your first one above!
+          </div>`;
+                    return;
+                }
+
+                list.innerHTML = data.map((entry, i) => {
+                    const emotion = (entry.emotion || '').toLowerCase();
+                    const [bg, fg] = EMOTION_COLORS[emotion] || ['rgba(100,100,100,0.12)', '#888'];
+                    const color = AMBIENCE_COLOR[entry.ambience] || '#aaa';
+                    const date = entry.createdAt ? new Date(entry.createdAt + ' UTC').toLocaleString() : '';
+
+                    return `<div class="entry-item" style="animation-delay:${i * 60}ms">
+            <div class="entry-amb-dot" style="background:${color}" title="${entry.ambience}"></div>
+            <div class="entry-body">
+              <div class="entry-text">${escapeHtml(entry.text)}</div>
+              <div class="entry-meta">
+                ${entry.emotion ? `<span class="entry-emotion-tag"
+                  style="background:${bg};color:${fg};border:1px solid ${fg}33">
+                  ${entry.emotion}</span>` : ''}
+                <span class="entry-date">${escapeHtml(entry.ambience)} · ${date}</span>
+              </div>
+            </div>
+          </div>`;
+                }).join('');
+
+            } catch (e) {
+                list.innerHTML = `<div class="empty-state">Could not load entries.</div>`;
+            }
+        }
+
+        /* ── Load insights ─────────────────────────────── */
+        async function loadInsights(userId) {
+            try {
+                const res = await fetch(`/api/journal/insights/${encodeURIComponent(userId)}`);
+                const data = await res.json();
+
+                document.getElementById('ins-total').textContent = data.totalEntries ?? '—';
+                document.getElementById('ins-emotion').textContent =
+                    data.topEmotion ? capitalize(data.topEmotion) : '—';
+                document.getElementById('ins-ambience').textContent =
+                    data.mostUsedAmbience
+                        ? { forest: '🌲', ocean: '🌊', mountain: '🏔️' }[data.mostUsedAmbience] || data.mostUsedAmbience
+                        : '—';
+
+                const kwCloud = document.getElementById('ins-keywords');
+                if (data.recentKeywords && data.recentKeywords.length) {
+                    kwCloud.innerHTML = data.recentKeywords.map(k =>
+                        `<span class="keyword-chip">${k}</span>`
+                    ).join('');
+                } else {
+                    kwCloud.innerHTML = '';
+                }
+
+            } catch (e) { /* insights optional */ }
+        }
+
+        /* ── Toast ─────────────────────────────────────── */
+        function toast(msg, isError = false) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = 'show' + (isError ? ' error' : '');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => el.className = '', 3000);
+        }
+
+        /* ── Helpers ───────────────────────────────────── */
+        function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+
+</body>
+
+</html>
