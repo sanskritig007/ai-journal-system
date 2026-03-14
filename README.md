@@ -5,7 +5,7 @@ ArvyaX is a full-stack AI journal application where users can write journal entr
 ## Features
 
 - Write and save journal entries
-- Select session ambience such as forest, ocean, or mountain
+- Select a session ambience such as forest, ocean, or mountain
 - Analyze entries with Gemini to generate:
   - emotion
   - keywords
@@ -18,6 +18,7 @@ ArvyaX is a full-stack AI journal application where users can write journal entr
   - recent keywords
 - React frontend with a polished single-page experience
 - Express backend with SQLite persistence
+- One-host deployment support using Express + built React app
 
 ## Tech Stack
 
@@ -41,22 +42,23 @@ ArvyaX is a full-stack AI journal application where users can write journal entr
 ### AI
 
 - Google Gemini API
+
 ## Project Structure
 
 ```text
 ai-journal-system/
-├─ client/                  # React frontend
-│  ├─ src/
-│  ├─ public/
-│  └─ package.json
-├─ controllers/             # Express controllers
-├─ models/                  # SQLite connection and schema
-├─ routes/                  # API routes
-├─ services/                # Gemini integration
-├─ server.js                # Express server
-├─ journal.db               # SQLite database
-├─ README.md
-└─ ARCHITECTURE.md
+|- client/                    # React frontend
+|  |- src/
+|  |- public/
+|  `- package.json
+|- controllers/               # Express controllers
+|- models/                    # SQLite connection and schema
+|- routes/                    # API routes
+|- services/                  # Gemini integration
+|- server.js                  # Express server
+|- journal.db                 # SQLite database
+|- README.md
+`- ARCHITECTURE.md
 ```
 
 ## Local Setup
@@ -102,7 +104,7 @@ You need two terminals during development.
 From the project root:
 
 ```bash
-node server.js
+npm run dev
 ```
 
 Expected output:
@@ -127,6 +129,50 @@ http://localhost:5173
 ```
 
 In development, Vite proxies `/api` requests to the Express backend.
+
+## Production Build and One-Host Deployment
+
+This project is configured to run on a single host in production.
+
+In production:
+
+- React is built into `client/dist`
+- Express serves the built frontend
+- API routes and frontend run from the same server
+
+### Build for production
+
+From the project root:
+
+```bash
+npm run build
+```
+
+This builds the frontend inside `client/` and generates `client/dist`.
+
+### Start production server
+
+```bash
+npm start
+```
+
+The Express server will:
+
+- serve `/api/journal/*` as backend routes
+- serve the built React app for non-API routes
+
+### Deployment Note
+
+For one-host deployment, your platform must:
+
+- install root dependencies
+- install `client/` dependencies
+- build the React app before starting the server
+
+Also note:
+
+- SQLite is acceptable for local/demo usage
+- for reliable hosted production, PostgreSQL would be a better choice than a local SQLite file
 
 ## API Endpoints
 
@@ -205,7 +251,7 @@ Example response:
 - `userId` is demo-friendly but not a secure authentication mechanism
 - This version is optimized for clarity and assignment demonstration, not final production scale
 
-More detail is documented in [ARCHITECTURE.md](/C:/Users/Friends/ai-journal-system/ARCHITECTURE.md).
+More detail is documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Verification Checklist
 
@@ -216,8 +262,25 @@ More detail is documented in [ARCHITECTURE.md](/C:/Users/Friends/ai-journal-syst
 - Past entries load for the same user
 - Insights update after saving entries
 - Postman API tests pass
+- Production build generates `client/dist`
+- Express serves the built frontend correctly
 
 ## Submission Files
 
-- [README.md](/C:/Users/Friends/ai-journal-system/README.md)
-- [ARCHITECTURE.md](/C:/Users/Friends/ai-journal-system/ARCHITECTURE.md)
+- [README.md](README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+
+## Demo
+
+- Local frontend: `http://localhost:5173` during development
+- Local backend: `http://localhost:5000`
+- Deployed demo: add your live link here after hosting
+
+## Future Improvements
+
+- deployed live demo
+- caching analysis results
+- rate limiting
+- Docker support
+- PostgreSQL for hosted production
+- real authentication instead of plain `userId`
