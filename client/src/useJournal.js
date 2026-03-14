@@ -53,15 +53,33 @@ export function useJournal() {
 
     // ── Change userId ──────────────────────────────────
     const changeUserId = (newId) => {
-        if (!newId.trim()) return;
-        localStorage.setItem('arvyax_userId', newId.trim());
-        setUserId(newId.trim());
+        const trimmedId = newId.trim();
+        if (!trimmedId) return false;
+
+        const userIdRegex = /^[a-zA-Z0-9_]{3,30}$/;
+        if (!userIdRegex.test(trimmedId)) {
+            showToast('Invalid User ID. Use 3-30 letters, numbers, or underscores.', 'error');
+            return false;
+        }
+
+        if (trimmedId === userId) return true;
+
+        localStorage.setItem('arvyax_userId', trimmedId);
+        setUserId(trimmedId);
+        showToast('User ID updated ✓');
+        return true;
     };
 
     // ── Save + Analyze ─────────────────────────────────
     const saveAndAnalyze = async ({ ambience, text }) => {
+        const trimmedText = text.trim();
         if (!ambience) { showToast('Please choose an ambience.', 'error'); return; }
-        if (!text.trim()) { showToast('Please write your journal entry.', 'error'); return; }
+        if (!trimmedText) { showToast('Please write your journal entry.', 'error'); return; }
+
+        if (trimmedText.length < 10 || !trimmedText.includes(' ')) {
+            showToast('Journal entry too short or invalid. Please write a few more words.', 'error');
+            return;
+        }
 
         setLoading(true);
         setLastResult(null);

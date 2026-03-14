@@ -6,8 +6,24 @@ const analyzeEmotion = require("../services/llmService");
 exports.createJournal = async (req, res) => {
   const { userId, ambience, text } = req.body;
 
+  // 1. Basic presence check
   if (!userId || !ambience || !text) {
     return res.status(400).json({ error: "userId, ambience, and text are required." });
+  }
+
+  // 2. Validate User ID (3-30 chars, alphanumeric + underscores)
+  const userIdRegex = /^[a-zA-Z0-9_]{3,30}$/;
+  if (!userIdRegex.test(userId)) {
+    return res.status(400).json({ 
+      error: "Invalid User ID. Must be 3-30 characters and only contain letters, numbers, and underscores." 
+    });
+  }
+
+  // 3. Validate Journal Entry (min 10 chars, must contain a space)
+  if (text.length < 10 || !text.includes(' ')) {
+    return res.status(400).json({ 
+      error: "Journal entry too short or invalid. Please write at least 10 characters with multiple words." 
+    });
   }
 
   try {
@@ -87,6 +103,13 @@ exports.analyzeText = async (req, res) => {
 
   if (!text) {
     return res.status(400).json({ error: "text is required." });
+  }
+
+  // Validate text (min 10 chars, must contain a space)
+  if (text.length < 10 || !text.includes(' ')) {
+    return res.status(400).json({ 
+      error: "Text too short or invalid. Please provide at least 10 characters with multiple words." 
+    });
   }
 
   try {

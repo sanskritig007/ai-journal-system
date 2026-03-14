@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useJournal } from './useJournal';
 import { AMBIENCE_COLOR, AMBIENCE_EMOJI, capitalize, getEmotionStyle } from './utils';
 import './index.css';
@@ -191,7 +191,7 @@ function Toast({ toast }) {
   );
 }
 
-/* Root App */
+  /* Root App */
 export default function App() {
   const {
     userId,
@@ -203,6 +203,20 @@ export default function App() {
     toast,
     saveAndAnalyze,
   } = useJournal();
+
+  const [localUserId, setLocalUserId] = useState(userId);
+
+  // Sync if userId changes externally
+  useEffect(() => {
+    setLocalUserId(userId);
+  }, [userId]);
+
+  const handleUserUpdate = () => {
+    const success = changeUserId(localUserId);
+    if (!success) {
+      setLocalUserId(userId); // revert on error
+    }
+  };
 
   return (
     <>
@@ -220,9 +234,10 @@ export default function App() {
           <span>User ID:</span>
           <input
             type="text"
-            defaultValue={userId}
-            onBlur={(e) => changeUserId(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && changeUserId(e.target.value)}
+            value={localUserId}
+            onChange={(e) => setLocalUserId(e.target.value)}
+            onBlur={handleUserUpdate}
+            onKeyDown={(e) => e.key === 'Enter' && handleUserUpdate()}
             maxLength={40}
           />
         </div>
