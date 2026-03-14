@@ -41,3 +41,183 @@ ArvyaX is a full-stack AI journal application where users can write journal entr
 ### AI
 
 - Google Gemini API
+## Project Structure
+
+```text
+ai-journal-system/
+├─ client/                  # React frontend
+│  ├─ src/
+│  ├─ public/
+│  └─ package.json
+├─ controllers/             # Express controllers
+├─ models/                  # SQLite connection and schema
+├─ routes/                  # API routes
+├─ services/                # Gemini integration
+├─ server.js                # Express server
+├─ journal.db               # SQLite database
+├─ README.md
+└─ ARCHITECTURE.md
+```
+
+## Local Setup
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd ai-journal-system
+```
+
+### 2. Install backend dependencies
+
+From the project root:
+
+```bash
+npm install
+```
+
+### 3. Install frontend dependencies
+
+```bash
+cd client
+npm install
+cd ..
+```
+
+### 4. Create `.env`
+
+In the project root, create a `.env` file with:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+PORT=5000
+```
+
+## Running the App
+
+You need two terminals during development.
+
+### Terminal 1: Backend
+
+From the project root:
+
+```bash
+node server.js
+```
+
+Expected output:
+
+```text
+Server running on http://localhost:5000
+Connected to SQLite database.
+```
+
+### Terminal 2: Frontend
+
+From `client/`:
+
+```bash
+npm run dev
+```
+
+Open the Vite URL shown in the terminal, usually:
+
+```text
+http://localhost:5173
+```
+
+In development, Vite proxies `/api` requests to the Express backend.
+
+## API Endpoints
+
+### `POST /api/journal`
+
+Save a journal entry and trigger AI analysis.
+
+Request body:
+
+```json
+{
+  "userId": "user123",
+  "ambience": "forest",
+  "text": "I felt calm and grounded after the session."
+}
+```
+
+Success response:
+
+```json
+{
+  "message": "Journal saved successfully",
+  "id": 1,
+  "emotion": "calm",
+  "keywords": ["calm", "grounded", "session"],
+  "summary": "The user feels peaceful and stable after their session."
+}
+```
+
+### `GET /api/journal/:userId`
+
+Fetch all journal entries for a specific user.
+
+### `POST /api/journal/analyze`
+
+Run standalone analysis without saving a journal entry.
+
+Request body:
+
+```json
+{
+  "text": "I feel peaceful and optimistic about the next week."
+}
+```
+
+### `GET /api/journal/insights/:userId`
+
+Fetch aggregate insights for a user.
+
+Example response:
+
+```json
+{
+  "totalEntries": 3,
+  "topEmotion": "calm",
+  "mostUsedAmbience": "forest",
+  "recentKeywords": ["calm", "grounded", "session"]
+}
+```
+
+## Frontend Flow
+
+1. A local `userId` is generated and persisted in browser `localStorage`
+2. The user writes a journal entry and selects an ambience
+3. The frontend calls `POST /api/journal`
+4. The backend analyzes the text with Gemini and stores the result
+5. The frontend refreshes:
+   - latest result card
+   - past entries
+   - mental state insights
+
+## Notes and Tradeoffs
+
+- SQLite is used for simplicity and local development speed
+- Gemini analysis currently happens synchronously during save
+- `userId` is demo-friendly but not a secure authentication mechanism
+- This version is optimized for clarity and assignment demonstration, not final production scale
+
+More detail is documented in [ARCHITECTURE.md](/C:/Users/Friends/ai-journal-system/ARCHITECTURE.md).
+
+## Verification Checklist
+
+- Backend starts successfully
+- Frontend opens successfully
+- Journal entries can be saved
+- Gemini analysis returns emotion, keywords, and summary
+- Past entries load for the same user
+- Insights update after saving entries
+- Postman API tests pass
+
+## Submission Files
+
+- [README.md](/C:/Users/Friends/ai-journal-system/README.md)
+- [ARCHITECTURE.md](/C:/Users/Friends/ai-journal-system/ARCHITECTURE.md)
