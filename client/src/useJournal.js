@@ -1,17 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// Auto-generate a userId that persists in localStorage
-function getOrCreateUserId() {
-    let id = localStorage.getItem('arvyax_userId');
-    if (!id) {
-        id = 'user_' + Math.random().toString(36).slice(2, 9);
-        localStorage.setItem('arvyax_userId', id);
-    }
-    return id;
-}
-
 export function useJournal() {
-    const [userId, setUserId] = useState(getOrCreateUserId);
+    const [userId, setUserId] = useState(() => localStorage.getItem('arvyax_userId') || '');
     const [entries, setEntries] = useState([]);
     const [insights, setInsights] = useState(null);
     const [lastResult, setLastResult] = useState(null); // latest analysis result

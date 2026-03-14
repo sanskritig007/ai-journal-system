@@ -239,6 +239,7 @@ export default function App() {
             onBlur={handleUserUpdate}
             onKeyDown={(e) => e.key === 'Enter' && handleUserUpdate()}
             maxLength={40}
+            placeholder="Enter your User ID"
           />
         </div>
 

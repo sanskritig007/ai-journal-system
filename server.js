@@ -7,15 +7,15 @@ const journalRoutes = require("./routes/journalRoutes");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(cors());
 app.use(express.json());
 
-// Serve the React frontend in production
 app.use(express.static(path.join(__dirname, "client/dist")));
 
 app.use("/api/journal", journalRoutes);
 
-// Catch-all route to serve the React app for non-API requests
 app.get(/^(?!\/api).+/, (req, res) => {
   res.sendFile(path.join(__dirname, "client/dist", "index.html"));
 });
