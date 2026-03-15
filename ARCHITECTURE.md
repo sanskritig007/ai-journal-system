@@ -8,6 +8,9 @@ This project is a full-stack AI journal application with:
 - Node.js + Express backend in the project root
 - SQLite as the current database
 - Google Gemini for journal analysis
+- **Server-Sent Events (SSE)** for real-time analysis streaming
+- **Redis (Upstash)** for analysis caching
+- **Express-Rate-Limit** for API protection
 
 ### Current Request Flow
 
@@ -157,68 +160,11 @@ If this became a real product, I would introduce:
 - feature gating for premium analysis volume
 
 
-## How I Would Cache Repeated Analysis
+This caching strategy is **currently implemented** using Upstash Redis. The system hashes the text, checks Redis, and skips the Gemini call if valid cached data exists.
 
-Repeated journal text is a direct opportunity to save cost and latency.
+### 4. Further Scaling Protection
 
-### Current Opportunity
-
-If the same or nearly same text is submitted multiple times, the backend currently calls Gemini every time.
-
-### Proposed Cache Strategy
-
-I would normalize the text first:
-
-- trim whitespace
-- lowercase
-- collapse repeated spaces
-
-Then generate a content hash, for example:
-
-- `sha256(normalized_text)`
-
-That hash becomes the cache key.
-
-### Cache Design
-
-For each unique normalized text:
-
-- key: content hash
-- value:
-  - emotion
-  - keywords
-  - summary
-  - model version
-  - prompt version
-  - created timestamp
-
-Storage options:
-
-- Redis for hot cache
-- PostgreSQL table for durable cache
-
-
-### Why Model Version Matters
-
-The cache should be invalidated when:
-
-- prompt changes
-- output contract changes
-- model changes
-
-So the real cache key should include:
-
-- text hash
-- model name
-- prompt version
-
-Example:
-
-- `sha256(normalized_text) + gemini-2.5-flash + prompt_v2`
-
-This prevents stale or mismatched analysis results.
-
-## How I Would Protect Sensitive Journal Data
+We have already implemented per-user/IP rate limits. For global scale, I would move these to the infrastructure layer (e.g., Cloudflare or a dedicated API Gateway).
 
 This application handles mental-state journaling, so privacy should be treated as a first-class concern.
 
