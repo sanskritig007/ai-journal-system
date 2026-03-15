@@ -4,8 +4,6 @@ const router = express.Router();
 const controller = require("../controllers/journalController");
 const { analysisLimiter, saveLimiter } = require("../middleware/rateLimit");
 
-// IMPORTANT: /analyze must come BEFORE /:userId
-// Otherwise Express treats "analyze" as a userId param
 router.post("/analyze", analysisLimiter, controller.analyzeText);
 router.get("/insights/:userId", controller.getInsights);
 
