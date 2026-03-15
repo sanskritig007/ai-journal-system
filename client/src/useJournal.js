@@ -5,6 +5,7 @@ export function useJournal() {
     const [entries, setEntries] = useState([]);
     const [insights, setInsights] = useState(null);
     const [lastResult, setLastResult] = useState(null); // latest analysis result
+    const [streamingRawText, setStreamingRawText] = useState("");
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState(null); // { msg, type }
 
@@ -73,22 +74,64 @@ export function useJournal() {
 
         setLoading(true);
         setLastResult(null);
+        setStreamingRawText("");
 
         try {
-            const res = await fetch('/api/journal', {
+            const res = await fetch('/api/journal/stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, ambience, text: text.trim() }),
+                body: JSON.stringify({ userId, ambience, text: trimmedText }),
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Something went wrong');
 
-            if (data.emotion) {
-                setLastResult(data);
-                showToast('Journal saved & analyzed ✓');
-            } else {
-                showToast('Entry saved! (AI analysis temporarily unavailable)');
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Something went wrong');
             }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let accumulatedRaw = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunkStr = decoder.decode(value, { stream: true });
+                const lines = chunkStr.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.substring(6);
+                        if (!dataStr) continue;
+                        
+                        try {
+                            const dataObj = JSON.parse(dataStr);
+                            if (dataObj.error) {
+                                throw new Error(dataObj.error);
+                            }
+                            if (dataObj.done) {
+                                if (dataObj.cached) {
+                                    setLastResult(JSON.parse(dataObj.chunk));
+                                } else {
+                                    const cleaned = accumulatedRaw.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+                                    const jsonStart = cleaned.indexOf("{");
+                                    const jsonEnd = cleaned.lastIndexOf("}") + 1;
+                                    if (jsonStart >= 0 && jsonEnd > 0) {
+                                        setLastResult(JSON.parse(cleaned.slice(jsonStart, jsonEnd)));
+                                    }
+                                }
+                                setStreamingRawText("");
+                            } else if (dataObj.chunk) {
+                                accumulatedRaw += dataObj.chunk;
+                                setStreamingRawText(accumulatedRaw);
+                            }
+                        } catch (e) {
+                            if (e.name === 'Error') throw e; // from throw new Error(dataObj.error)
+                        }
+                    }
+                }
+            }
+
+            showToast('Journal saved & analyzed ✓');
 
             // Refresh entries and insights
             await Promise.all([loadEntries(userId), loadInsights(userId)]);
@@ -103,7 +146,7 @@ export function useJournal() {
 
     return {
         userId, changeUserId,
-        entries, insights, lastResult,
+        entries, insights, lastResult, streamingRawText,
         loading, toast,
         saveAndAnalyze,
     };

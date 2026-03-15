@@ -8,6 +8,7 @@ router.post("/analyze", analysisLimiter, controller.analyzeText);
 router.get("/insights/:userId", controller.getInsights);
 
 router.post("/", saveLimiter, controller.createJournal);
+router.post("/stream", saveLimiter, controller.createJournalStream);
 router.get("/:userId", controller.getEntries);
 
 module.exports = router;

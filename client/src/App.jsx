@@ -199,6 +199,7 @@ export default function App() {
     entries,
     insights,
     lastResult,
+    streamingRawText,
     loading,
     toast,
     saveAndAnalyze,
@@ -244,7 +245,21 @@ export default function App() {
         </div>
 
         <JournalForm onSubmit={saveAndAnalyze} loading={loading} />
-        <ResultCard result={lastResult} />
+        
+        {streamingRawText && (
+          <div className="result-card" style={{ border: '1px solid var(--primary)', transition: 'all 0.3s ease' }}>
+            <div className="result-header">
+              <div className="emotion-badge" style={{ background: 'var(--primary)', color: 'black' }}>
+                ✦ Analyzing...
+              </div>
+            </div>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
+              {streamingRawText}
+              <span style={{ opacity: 0.5 }}>|</span>
+            </pre>
+          </div>
+        )}
+        {!streamingRawText && <ResultCard result={lastResult} />}
 
         <div className="divider" />
         <Insights data={insights} />

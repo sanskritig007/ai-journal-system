@@ -1,5 +1,5 @@
 const db = require("../models/db");
-const analyzeEmotion = require("../services/llmService");
+const { analyzeEmotion, streamAnalysis } = require("../services/llmService");
 
 // POST /api/journal
 // Saves entry + auto-runs LLM analysis and stores the result
@@ -69,6 +69,42 @@ exports.createJournal = async (req, res) => {
       }
     );
   }
+};
+
+// POST /api/journal/stream
+// Streams SSE analysis to client and saves journal entry
+exports.createJournalStream = async (req, res) => {
+  const { userId, ambience, text } = req.body;
+
+  if (!userId || !ambience || !text) {
+    return res.status(400).json({ error: "userId, ambience, and text are required." });
+  }
+
+  const userIdRegex = /^[a-zA-Z0-9_]{3,30}$/;
+  if (!userIdRegex.test(userId)) {
+    return res.status(400).json({ error: "Invalid User ID." });
+  }
+
+  if (text.length < 10 || !text.includes(' ')) {
+    return res.status(400).json({ error: "Journal entry too short or invalid." });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const onComplete = (analysis) => {
+      const keywordsStr = Array.isArray(analysis.keywords) ? analysis.keywords.join(",") : analysis.keywords;
+      db.run(
+        `INSERT INTO journals (userId, ambience, text, emotion, keywords, summary) VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, ambience, text, analysis.emotion, keywordsStr, analysis.summary],
+        function(err) {
+            if (err) console.error("Failed to save streamed journal to DB", err);
+        }
+      );
+  };
+
+  await streamAnalysis(text, res, onComplete);
 };
 
 // GET /api/journal/:userId

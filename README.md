@@ -16,6 +16,9 @@ ArvyaX is a full-stack AI journal application where users can write journal entr
   - top emotion
   - favorite ambience
   - recent keywords
+- **[NEW] API Rate Limiting** to prevent abuse (100 req / 15 min per IP)
+- **[NEW] Serverless Redis Caching** using Upstash to instantly serve duplicate journal queries
+- **[NEW] Real-time AI Streaming (SSE)** for faster perceived response times with a typing effect
 - React frontend with a polished single-page experience
 - Express backend with SQLite persistence
 - One-host deployment support using Express + built React app
@@ -34,6 +37,8 @@ ArvyaX is a full-stack AI journal application where users can write journal entr
 - Express
 - Axios
 - dotenv
+- express-rate-limit (Rate Limiting)
+- redis (Upstash Serverless Caching)
 
 ### Database
 
@@ -91,7 +96,8 @@ cd ..
 In the project root, create a `.env` file with:
 
 ```env
-GEMINI_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_gemini_key_here
+REDIS_URL=rediss://default:your_upstash_token@your-endpoint.upstash.io:6379
 PORT=5000
 ```
 
@@ -206,6 +212,10 @@ Success response:
 
 Fetch all journal entries for a specific user.
 
+### `POST /api/journal/stream`
+
+Takes the same body as `/api/journal` but returns Server-Sent Events (SSE) streaming the AI JSON chunks in real-time, then saves the journal.
+
 ### `POST /api/journal/analyze`
 
 Run standalone analysis without saving a journal entry.
@@ -278,9 +288,7 @@ More detail is documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Future Improvements
 
-- deployed live demo
-- caching analysis results
-- rate limiting
-- Docker support
+- Deployed live demo
+- Docker support / containerization
 - PostgreSQL for hosted production
-- real authentication instead of plain `userId`
+- Real authentication instead of plain `userId`
